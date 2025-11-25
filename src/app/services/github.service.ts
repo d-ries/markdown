@@ -11,22 +11,30 @@ export class GithubService {
   loading = signal(false);
   error = signal<string | null>(null);
 
-  async fetchMarkdown(githubUrl: string): Promise<string> {
+  async fetchMarkdown(url: string): Promise<string> {
     this.loading.set(true);
     this.error.set(null);
 
     try {
-      const apiUrl = this.convertToApiUrl(githubUrl);
-      const response = await firstValueFrom(
-        this.http.get<{ content: string; encoding: string }>(apiUrl)
-      );
+      let content: string;
       
-      // GitHub API returns base64 encoded content with newlines, strip them first
-      const content = atob(response.content.replace(/\s/g, ''));
+      // Check if it's a GitHub URL that needs conversion to API
+      if (url.includes('github.com') && url.includes('/blob/')) {
+        const apiUrl = this.convertToApiUrl(url);
+        const response = await firstValueFrom(
+          this.http.get<{ content: string; encoding: string }>(apiUrl)
+        );
+        // GitHub API returns base64 encoded content with newlines, strip them first
+        content = atob(response.content.replace(/\s/g, ''));
+      } else {
+        // Direct URL to raw markdown file
+        content = await firstValueFrom(this.http.get(url, { responseType: 'text' }));
+      }
+      
       this.loading.set(false);
       return content;
     } catch (err: any) {
-      const errorMsg = err?.message || 'Failed to fetch markdown from GitHub';
+      const errorMsg = err?.message || 'Failed to fetch markdown';
       this.error.set(errorMsg);
       this.loading.set(false);
       throw new Error(errorMsg);
@@ -39,7 +47,7 @@ export class GithubService {
     // Support both https:// and without protocol
     const match = githubUrl.match(/(?:https?:\/\/)?github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)/);
     if (!match) {
-      throw new Error(`Invalid GitHub URL: ${githubUrl}. Expected format: https://github.com/user/repo/blob/branch/file.md`);
+      throw new Error(`Invalid GitHub URL format`);
     }
     
     const [, owner, repo, branch, path] = match;

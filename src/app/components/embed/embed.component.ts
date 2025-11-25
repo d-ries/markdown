@@ -66,20 +66,27 @@ export class EmbedComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private fixImageUrls(html: string, githubUrl: string): string {
-    // Extract base path from GitHub URL
-    // https://github.com/user/repo/blob/branch/path/file.md -> https://raw.githubusercontent.com/user/repo/branch/path/
-    const match = githubUrl.match(/https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/blob\/([^\/]+)\/(.+)/);
-    if (!match) return html;
+  private fixImageUrls(html: string, url: string): string {
+    let baseUrl: string;
     
-    const [, owner, repo, branch, filePath] = match;
-    const dirPath = filePath.substring(0, filePath.lastIndexOf('/') + 1);
-    const baseUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${dirPath}`;
+    // Check if it's a GitHub URL
+    const githubMatch = url.match(/https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/blob\/([^\/]+)\/(.+)/);
+    if (githubMatch) {
+      const [, owner, repo, branch, filePath] = githubMatch;
+      const dirPath = filePath.substring(0, filePath.lastIndexOf('/') + 1);
+      baseUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${dirPath}`;
+    } else {
+      // For direct URLs (like GitHub Pages), use the directory of the markdown file
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/');
+      pathParts.pop(); // Remove filename
+      baseUrl = `${urlObj.origin}${pathParts.join('/')}/`;
+    }
     
-    // Replace relative image URLs with absolute GitHub raw URLs
+    // Replace relative image URLs with absolute URLs
     return html.replace(/<img([^>]*)\ssrc="(?!https?:\/\/)([^"]+)"/g, (match, attrs, src) => {
       const absoluteUrl = src.startsWith('/') 
-        ? `https://raw.githubusercontent.com/${owner}/${repo}/${branch}${src}`
+        ? new URL(src, baseUrl).origin + src
         : baseUrl + src;
       return `<img${attrs} src="${absoluteUrl}"`;
     });
