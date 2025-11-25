@@ -24,7 +24,8 @@ export class DashboardComponent {
 
     const encodedUrl = btoa(url);
     const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '');
-    const fullEmbedUrl = `${baseUrl}/embed/${encodedUrl}`;
+    const timestamp = Date.now();
+    const fullEmbedUrl = `${baseUrl}/embed/${encodedUrl}?v=${timestamp}`;
     
     this.embedUrl.set(fullEmbedUrl);
     this.iframeCode.set(`<iframe id="markdown-iframe" src="${fullEmbedUrl}" width="100%" height="6000px" frameborder="0"></iframe>`);
