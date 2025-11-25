@@ -27,7 +27,7 @@ export class DashboardComponent {
     const fullEmbedUrl = `${baseUrl}/embed/${encodedUrl}`;
     
     this.embedUrl.set(fullEmbedUrl);
-    this.iframeCode.set(`<iframe src="${fullEmbedUrl}" width="100%" height="600" frameborder="0"></iframe>`);
+    this.iframeCode.set(`<iframe id="markdown-iframe" src="${fullEmbedUrl}" width="100%" height="6000px" frameborder="0"></iframe>`);
     this.sanitizedEmbedUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(fullEmbedUrl));
     this.copied.set(false);
   }
