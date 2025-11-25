@@ -1,0 +1,82 @@
+<div class="min-h-screen bg-[#0d1117] py-12 px-4">
+  <div class="max-w-5xl mx-auto">
+    <header class="text-center mb-16">
+      <h1 class="text-5xl font-bold text-white mb-3">Markdown Ultra</h1>
+      <p class="text-xl text-gray-400">GitHub markdown voor Blackboard Ultra</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+      <div class="bg-[#161b22] border border-[#30363d] rounded-lg p-6 hover:border-[#58a6ff] transition-colors">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-[#58a6ff]/10 rounded-full flex items-center justify-center">
+            <span class="text-2xl font-bold text-[#58a6ff]">1</span>
+          </div>
+          <h3 class="font-semibold text-white text-lg">GitHub URL</h3>
+        </div>
+        <p class="text-gray-400 text-sm">Plak de link naar je markdown bestand</p>
+      </div>
+      
+      <div class="bg-[#161b22] border border-[#30363d] rounded-lg p-6 hover:border-[#3fb950] transition-colors">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-[#3fb950]/10 rounded-full flex items-center justify-center">
+            <span class="text-2xl font-bold text-[#3fb950]">2</span>
+          </div>
+          <h3 class="font-semibold text-white text-lg">Generate</h3>
+        </div>
+        <p class="text-gray-400 text-sm">Genereer de iframe code</p>
+      </div>
+      
+      <div class="bg-[#161b22] border border-[#30363d] rounded-lg p-6 hover:border-[#a371f7] transition-colors">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-[#a371f7]/10 rounded-full flex items-center justify-center">
+            <span class="text-2xl font-bold text-[#a371f7]">3</span>
+          </div>
+          <h3 class="font-semibold text-white text-lg">Blackboard</h3>
+        </div>
+        <p class="text-gray-400 text-sm">Plak in Blackboard Ultra</p>
+      </div>
+    </div>
+
+    <div class="bg-[#161b22] border border-[#30363d] rounded-lg p-8 mb-8">
+      <label for="github-url" class="block text-sm font-semibold text-gray-300 mb-3">
+        GitHub Markdown URL
+      </label>
+      <input 
+        id="github-url"
+        type="url" 
+        [(ngModel)]="githubUrl"
+        placeholder="https://github.com/user/repo/blob/main/file.md"
+        class="w-full px-4 py-3 bg-[#0d1117] border border-[#30363d] rounded-md text-white placeholder-gray-500 focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent outline-none transition mb-4"
+      />
+      <button 
+        (click)="generateEmbed()"
+        [disabled]="!githubUrl()"
+        class="w-full bg-[#238636] hover:bg-[#2ea043] disabled:bg-[#21262d] disabled:text-gray-500 text-white font-semibold py-3 px-6 rounded-md transition duration-200 disabled:cursor-not-allowed"
+      >
+        Generate iframe code
+      </button>
+    </div>
+
+    @if (iframeCode()) {
+      <div class="bg-[#161b22] border border-[#30363d] rounded-lg p-8">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-semibold text-white">Iframe code voor Blackboard</h3>
+          <button
+            (click)="copyToClipboard()"
+            class="bg-[#238636] hover:bg-[#2ea043] text-white font-medium py-2 px-4 rounded-md transition duration-200 flex items-center gap-2"
+          >
+            {{ copied() ? '✓ Gekopieerd!' : 'Kopieer' }}
+          </button>
+        </div>
+        <pre class="bg-[#0d1117] border border-[#30363d] text-gray-300 p-4 rounded-md overflow-x-auto text-sm"><code>{{ iframeCode() }}</code></pre>
+        
+        <h3 class="text-xl font-semibold text-white mt-8 mb-4">Preview</h3>
+        <iframe 
+          [src]="sanitizedEmbedUrl()" 
+          class="w-full h-[600px] bg-white border border-[#30363d] rounded-md"
+          title="Markdown preview"
+        ></iframe>
+      </div>
+    }
+  </div>
+</div>

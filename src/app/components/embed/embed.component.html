@@ -1,0 +1,13 @@
+<article class="markdown-body">
+  @if (loading()) {
+    <div class="loading">
+      <p>Loading markdown...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error">
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (htmlContent()) {
+    <div [innerHTML]="htmlContent()"></div>
+  }
+</article>
