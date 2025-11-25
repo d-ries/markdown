@@ -166,9 +166,6 @@ Here's a **complex section** with _multiple_ elements:
 
 > **Note:** Always test your markdown before deploying!
 
-## Emoji Support (if enabled)
-
-:smile: :rocket: :heart: :+1: :tada:
 
 ## Definition Lists (extended syntax)
 
@@ -179,24 +176,6 @@ Term 2
 : Definition 2a
 : Definition 2b
 
-## Footnotes (extended syntax)
-
-Here's a sentence with a footnote[^1].
-
-Here's another one[^2].
-
-[^1]: This is the first footnote.
-[^2]: This is the second footnote with more detailed information.
-
-## Math (if supported)
-
-Inline math: $E = mc^2$
-
-Block math:
-
-$$
-\int_{0}^{\infty} e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
-$$
 
 ---
 
