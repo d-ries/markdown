@@ -73,7 +73,3 @@ Push to `main` branch - GitHub Actions automatically deploys.
 - Tailwind CSS
 - Marked.js (Markdown parser)
 - GitHub API
-
-## License
-
-MIT
