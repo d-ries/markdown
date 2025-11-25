@@ -84,12 +84,17 @@ export class EmbedComponent implements OnInit, AfterViewInit {
     }
     
     // Replace relative image URLs with absolute URLs
-    return html.replace(/<img([^>]*)\ssrc="(?!https?:\/\/)([^"]+)"/g, (match, attrs, src) => {
+    let fixedHtml = html.replace(/<img([^>]*)\ssrc="(?!https?:\/\/)([^"]+)"/g, (match, attrs, src) => {
       const absoluteUrl = src.startsWith('/') 
         ? new URL(src, baseUrl).origin + src
         : baseUrl + src;
       return `<img${attrs} src="${absoluteUrl}"`;
     });
+    
+    // Add target="_blank" to all links
+    fixedHtml = fixedHtml.replace(/<a\s+href=/g, '<a target="_blank" rel="noopener noreferrer" href=');
+    
+    return fixedHtml;
   }
 
   ngAfterViewInit(): void {
