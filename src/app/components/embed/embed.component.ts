@@ -1,10 +1,13 @@
-import { Component, inject, signal, OnInit, AfterViewInit, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
+import { Component, inject, signal, OnInit, AfterViewInit, ChangeDetectionStrategy, ViewEncapsulation, Renderer2, ComponentRef, EnvironmentInjector, createComponent, NgZone } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { GithubService } from '../../services/github.service';
 import { marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import hljs from 'highlight.js';
+import { preprocessMarkdownForQuizzes, getQuizData, clearQuizData } from '../../services/quiz-extension';
+import { QuizComponent } from '../quiz/quiz.component';
+import { Quiz } from '../../services/quiz-parser.service';
 
 @Component({
   selector: 'app-embed',
@@ -17,10 +20,14 @@ export class EmbedComponent implements OnInit, AfterViewInit {
   private route = inject(ActivatedRoute);
   private githubService = inject(GithubService);
   private sanitizer = inject(DomSanitizer);
+  private renderer = inject(Renderer2);
+  private environmentInjector = inject(EnvironmentInjector);
+  private ngZone = inject(NgZone);
   
   htmlContent = signal<SafeHtml | null>(null);
   loading = this.githubService.loading;
   error = this.githubService.error;
+  private quizMarkers: { element: HTMLElement; quiz: Quiz }[] = [];
 
   ngOnInit(): void {
     // Configure marked to use highlight.js
@@ -53,17 +60,91 @@ export class EmbedComponent implements OnInit, AfterViewInit {
 
   private async loadMarkdown(githubUrl: string): Promise<void> {
     try {
+      // Clear previous quiz data
+      clearQuizData();
+      
       const markdown = await this.githubService.fetchMarkdown(githubUrl);
-      const html = await marked.parse(markdown);
+      
+      // Preprocess markdown to extract and store quizzes
+      const preprocessed = preprocessMarkdownForQuizzes(markdown);
+      const html = await marked.parse(preprocessed);
       
       // Fix relative image URLs to point to GitHub
       const fixedHtml = this.fixImageUrls(html, githubUrl);
       
       this.htmlContent.set(this.sanitizer.bypassSecurityTrustHtml(fixedHtml));
-      setTimeout(() => this.sendHeight(), 100);
+      
+      // Delay to allow DOM to render before processing quizzes
+      setTimeout(() => {
+        this.renderQuizzes();
+        this.sendHeight();
+      }, 100);
     } catch {
       // Error already handled in service
     }
+  }
+
+  private renderQuizzes(): void {
+    const quizMarkers = document.querySelectorAll('.quiz-marker');
+    console.log(`🔍 Looking for quiz markers... Found: ${quizMarkers.length}`);
+    
+    if (quizMarkers.length === 0) {
+      console.warn('⚠️ No quiz markers found in DOM');
+      return;
+    }
+    
+    quizMarkers.forEach((marker: Element, index: number) => {
+      this.ngZone.run(() => {
+        const htmlElement = marker as HTMLElement;
+        const quizId = htmlElement.getAttribute('data-quiz-id');
+        
+        console.log(`\n▶ Processing marker #${index + 1}, ID: ${quizId}`);
+        
+        if (!quizId) {
+          console.warn('⚠️ Quiz marker has no data-quiz-id');
+          return;
+        }
+        
+        try {
+          const quizData = getQuizData(quizId);
+          
+          if (!quizData) {
+            console.warn(`⚠️ No quiz data found for ID: ${quizId}`);
+            console.log('Available quiz IDs:', Array.from((getQuizData as any).toString().match(/quiz-\d+/g) || []));
+            return;
+          }
+          
+          console.log(`✓ Found quiz data for ${quizId}:`, quizData);
+          
+          // Create a container div for the component
+          const container = this.renderer.createElement('div');
+          this.renderer.insertBefore(
+            htmlElement.parentNode,
+            container,
+            htmlElement
+          );
+          this.renderer.removeChild(htmlElement.parentNode, htmlElement);
+          
+          // Create and render the quiz component using the modern Angular approach
+          const componentRef = createComponent(QuizComponent, {
+            environmentInjector: this.environmentInjector,
+            hostElement: container
+          });
+          
+          componentRef.setInput('quizData', quizData);
+          componentRef.changeDetectorRef.detectChanges();
+          
+          console.log(`✓ Quiz component rendered successfully`);
+          
+          this.quizMarkers.push({
+            element: container,
+            quiz: quizData
+          });
+        } catch (error) {
+          console.error('❌ Failed to render quiz:', error);
+        }
+      });
+    });
   }
 
   private fixImageUrls(html: string, url: string): string {
@@ -102,6 +183,20 @@ export class EmbedComponent implements OnInit, AfterViewInit {
     
     // Send height on window resize
     window.addEventListener('resize', () => this.sendHeight());
+    
+    // Also observe DOM mutations to recalculate height when quizzes change
+    const observer = new MutationObserver(() => {
+      setTimeout(() => this.sendHeight(), 100);
+    });
+    
+    const articleElement = document.querySelector('article.markdown-body');
+    if (articleElement) {
+      observer.observe(articleElement, {
+        subtree: true,
+        childList: true,
+        attributes: true
+      });
+    }
   }
 
   private sendHeight(): void {

@@ -1,0 +1,44 @@
+<div class="quiz-container">
+  <div class="quiz-question">
+    <p class="question-text">{{ quizData.question }}</p>
+  </div>
+
+  <div class="quiz-options">
+    @for (option of quizData.options; track option.label) {
+      <label class="option-label" [class.disabled]="isAnswered()">
+        <input
+          type="radio"
+          [name]="quizData.id"
+          [value]="option.label"
+          [(ngModel)]="selectedAnswer"
+          [disabled]="isAnswered()"
+        />
+        <span class="option-content">
+          <span class="option-label-text">{{ option.label }})</span>
+          <span class="option-text">{{ option.text }}</span>
+        </span>
+        @if (isAnswered() && option.label === quizData.correctAnswer) {
+          <span class="correct-indicator">✓</span>
+        }
+        @if (isAnswered() && selectedAnswer() === option.label && option.label !== quizData.correctAnswer) {
+          <span class="incorrect-indicator">✗</span>
+        }
+      </label>
+    }
+  </div>
+
+  <div class="quiz-actions">
+    @if (!isAnswered()) {
+      <button class="btn-submit" (click)="onSubmit()">Check Answer</button>
+    }
+    @if (isAnswered()) {
+      <button class="btn-reset" (click)="reset()">Try Again</button>
+    }
+  </div>
+
+  @if (feedback()) {
+    <div class="quiz-feedback" [class.feedback-correct]="isCorrect()" [class.feedback-incorrect]="!isCorrect()">
+      {{ feedback() }}
+    </div>
+  }
+</div>
